@@ -1,63 +1,57 @@
 package ChatApp2;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Observable;
+import java.util.Observer;
+import java.net.*;
 
-public class CommandListenerThread extends Observable implements Runnable{
+public class CommandListenerThread extends Observable implements Runnable {
+    //Connection connection = new Connection();
+    private Command lastCommand;
+    private Connection connection;
+    private boolean isExit = true;
+    private boolean isSleep = true;
+    private Thread thread;
+    public final static  String itIsCommandLisnenerThread="lastCommand";
 
-	private boolean isSleep, isExit = true;
-	private Command lastCommand;
-	private Connection connection;
-	private Thread thread;
-	
-	public CommandListenerThread(String name, Connection connection){
-		this.connection = connection;
-		thread = new Thread(this, name);
-	}
-	
-	public void CommandListenerThreadStart(){
-		thread.start();
-	}
-	
-	public void run() {
-		while(isExit){
-			synchronized (this){
-				if (isSleep){
-					try{
-						this.wait();
-					} catch(InterruptedException e){}
-				} else {
-					try{ 
-					lastCommand = connection.receive();
-					setChanged();
-					notifyObservers(lastCommand);
-					} catch(IOException e){
-						
-					}
-				}
-			}
-		}
-	}
+    public Socket getSocket(){
+        return connection.getSocket();
+    }
 
-	public Command getLastCommand(){
-		return lastCommand;
-	}
-	
-	//этот метод возможно будут нужен
-	public void waitMethod(){
-		isSleep = true;
-	}
-	
-	//этот метод возможно будет нужен
-	public void stop(){
-		isExit = false;
-	}
-	
-	//этот метод возможно будет нужен
-	public void notifyMethod(){
-		isSleep = false;
-		synchronized(this){
-			this.notify();
-		}
-		
-	}
+    public CommandListenerThread(String name, Connection connection){
+        this.connection = connection;
+        thread = new Thread(this,name);
+    }
+
+    /*public void setConnection(Connection connection){
+        this.connection = connection;
+    }
+*/
+    public Command getLastCommand(){
+        return lastCommand;
+    }
+
+    public void CommandListenerThreadStart(){
+        thread.start();
+    }
+
+    public void stop(){
+        isExit = false;
+    }
+
+    @Override
+    public void run() {
+     while (isExit){
+         synchronized (this) {
+                 try {
+                     lastCommand = connection.receive();
+                     setChanged();
+                     notifyObservers(itIsCommandLisnenerThread);
+                 }catch (IOException e){
+
+                 }
+             }
+         }
+    }
 }
+
