@@ -1,11 +1,14 @@
+package ChatApp2;
+
 import java.util.Observable;
-import java.net.*;
+import java.net.*; 
 
 public class CallListenerThread extends Observable implements Runnable {
     private Thread t = null;
-    private boolean isWorkFlag = true , isSleepFlag = false;
+    private boolean isWorkFlag = true;
     private CallListener callListener;
     private Socket socket;
+    public final static  String itIsCallLisnenerThread="socket";
 
 
     public CallListenerThread( int port){
@@ -13,7 +16,7 @@ public class CallListenerThread extends Observable implements Runnable {
             ServerSocket server = new ServerSocket(port);
             callListener = new CallListener(server);
         } catch (Exception e) {
-            System.out.println("РќРµ РјРѕРіСѓ СЃРѕР·РґР°С‚СЊ С‚Р°РєРѕР№ РїРѕСЂС‚: " + port);
+            System.out.println("Не могу создать такой порт: " + port);
         }
     }
 
@@ -25,15 +28,10 @@ public class CallListenerThread extends Observable implements Runnable {
     public void run() {
         while(isWorkFlag){
             synchronized (this) {
-                // if (isSleepFlag){
-                  /*  try{
-                        t.wait();
-                    } catch(InterruptedException e){}
-              //  } else {*/
                 socket = null;
                 socket = callListener.getSocket();
                 setChanged();
-                notifyObservers();
+                notifyObservers(itIsCallLisnenerThread);
             }
             }
         }
@@ -41,12 +39,11 @@ public class CallListenerThread extends Observable implements Runnable {
 
     public void stop(){
         synchronized (this) {
-           // this.notify();
             isWorkFlag = false;
         }
     }
 
-    private Socket getSocket(){
+    public Socket getSocket(){
         Socket socket1 = socket;
         return socket1;
     }
