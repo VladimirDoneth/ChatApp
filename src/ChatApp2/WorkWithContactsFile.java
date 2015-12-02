@@ -43,6 +43,7 @@ public class WorkWithContactsFile {
 			count = dataInput.readInt();
 			//System.out.println(count+" count");
 		} catch (IOException e) {
+			//System.out.println("сука, какого хрена");
 			count = 0;
 			file.seek(0);
 		    dataOutput.writeInt(count);
@@ -58,9 +59,8 @@ public class WorkWithContactsFile {
 				count1 = dataInput.readInt();
 				IP = getStringFromFile(count1, LENGTH_IP);
 				boolean isDeleted = dataInput.readBoolean();
-				if (!isDeleted)
-					contacts.addContact(nick, IP);
-				System.out.println("i: "+i+" "+isDeleted);
+				if (!isDeleted) contacts.addContact(nick, IP);
+			//	System.out.println("i: "+i+" "+isDeleted);
 			}
 		}
 	}
@@ -70,7 +70,7 @@ public class WorkWithContactsFile {
 		dataOutput.writeInt(str.length());
 		for(;i<str.length();i++) {
 			dataOutput.writeChar(str.charAt(i));
-		//	System.out.println("str["+i+"]="+str.charAt(i));
+			//System.out.println("str["+i+"]="+str.charAt(i));
 		}	
 		for(;i<LENGTH;i++)
 			dataOutput.writeChar(' ');
@@ -83,10 +83,9 @@ public class WorkWithContactsFile {
 			count = dataInput.readInt();
 		} catch (IOException e) {
 			count = 0;
-			file.seek(0);
-			dataOutput.writeInt(0);
 		}
 		file.seek(0);
+	  //  System.out.println(count+ " count");
 		dataOutput.writeInt(count+1);
 		file.seek(32+count*SIZE_CONT);
 		writeInFile(nick,LENGTH_NICK);
@@ -94,10 +93,35 @@ public class WorkWithContactsFile {
 		dataOutput.writeBoolean(false);
 	}
 	
+	public boolean deleteContacts(String nickName) throws IOException{
+		boolean isMakeDelete = false;
+		file.seek(0);
+		int count = dataInput.readInt();
+		if (count != 0) {
+			//	file.seek(32);
+				for (int i = 0; i < count; i++) {
+					file.seek(32+SIZE_CONT*i);
+					int count1;
+					String IP, nick;
+					count1 = dataInput.readInt();
+					nick = getStringFromFile(count1, LENGTH_NICK);
+					count1 = dataInput.readInt();
+					IP = getStringFromFile(count1, LENGTH_IP);
+					if (nick.equals(nickName)){
+					  isMakeDelete = true;
+					  dataOutput.writeBoolean(true);
+					}else{
+					   boolean isDeleted = file.readBoolean();
+					}  
+				}
+			}
+		return isMakeDelete;
+	}
+	
 	public Contacts getContacts() {
 		return contacts;
 	}
-	
+	/*
 	public boolean replacementIP(String nickName) throws IOException{
 		boolean isMaked = false;
 		file.seek(0);
@@ -116,11 +140,16 @@ public class WorkWithContactsFile {
 				nick = getStringFromFile(count, LENGTH_NICK);
 				count = file.readInt();
 				IP = getStringFromFile(count, LENGTH_IP);
-				boolean isDeleted = file.readBoolean();
+				if (nick.equals(nickName)){
+					
+				}else{
+				   boolean isDeleted = file.readBoolean();
+				}  
 				//if (!isDeleted)
 					
 			}
 		}
 		return isMaked;
 	}
+	*/
 }
