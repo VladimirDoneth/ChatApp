@@ -5,19 +5,18 @@ public class TestWorkingContactsIO {
 
 	public static void main(String[] args) throws Exception {
 		WorkWithContactsFile wwf = new WorkWithContactsFile();
-		try{
-		wwf.addContactToFile("WhatAreFuck", "127.0.4.14");
-		   try{
-			   wwf.readContacts();
-		   }catch(Exception ef){
-			   System.out.println("fuck 1");
-			   ef.printStackTrace();
-		   }
-		} catch(Exception e){
-			e.printStackTrace();
-		}
-		
-		
+		/*
+		wwf.addContactToFile("vladimir", "123.12.15.66");
+		wwf.addContactToFile("anna", "173.12.15.66");
+		wwf.addContactToFile("sanya", "174.12.15.66");
+		wwf.addContactToFile("masha", "175.12.15.66");
+		wwf.addContactToFile("bob", "176.12.15.66");
+		wwf.addContactToFile("vahaMaha", "177.12.15.66");
+		*/
+		//wwf.deleteContacts("bob");
+		//wwf.deleteContacts("vahaMaha");
+		//wwf.deleteContacts("masha");
+		wwf.readContacts();
 		Contacts con = wwf.getContacts();
 		System.out.println(con.getSize()+" size");
 		for (int i = 0; i<con.getSize(); i++){
