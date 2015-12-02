@@ -10,6 +10,17 @@ public class Contacts {
 	   IPArray = new ArrayList<String>();
    }
    
+   public boolean isHaveItNick(String nick){
+	   boolean isHaveItNick = false;
+	   for (int i = 0; i<nickNameArray.size(); i++){
+		   if (nick.equals(nickNameArray.get(i))){
+			   isHaveItNick = true;
+			   break;
+		   }
+	   }
+	   return isHaveItNick;
+   }
+   
    public void addContact(String nick, String IP){
 	   nickNameArray.add(nick);
 	   IPArray.add(IP);
