@@ -1,4 +1,6 @@
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,27 +12,37 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Observer;
-
+import java.sql.*;
 /**
  * Created by anna on 17.11.15.
  */
+
 public class ChatAppGUI implements Observer {
     private JFrame frame = new JFrame();
     private ArrayList<String> arrayList = new ArrayList<String>();
     private JPanel panel;
     private JTextField myNickNameField;
     private JButton applyButton;
-    private JTextField friendIPField;
+    //private JTextField friendIPField;
     private JTextField friendNickField;
     private JButton disconnectButton;
     private JButton connectButton;
     private JLabel myNickName;
-    private JLabel friendIP;
     private JLabel friendNick;
     private JTextField messageField;
     private JButton sendButton;
     private JTextArea DialogArea;
+   // private JButton contactsButton;
+    private JScrollPane scrollPane;
+    private JButton addButton;
+    private JScrollBar scrollBar1;
+    private JButton contactsButton;
+    private JButton cancelButton;
+    private JButton myFriendsButton;
+    private JButton deleteButton;
     private CallWindow callWindow;
+    private JScrollBar scrollBar;
+    private Controll controll;
 
 
     private Connection connection = new Connection();
@@ -47,156 +59,282 @@ public class ChatAppGUI implements Observer {
     private int tmpSize=25;
     private ChatAppGUI guiForm=this;
     private IPErrors ipErrors = new IPErrors();
+    private String IP;
+    private Contacts contacts;
+    ServerConnection c;
+    private ArrayList<String> arrayListFriends = new ArrayList<String>();
+    private ArrayList<String> serverContacts = new ArrayList<String>();
 
+    public ChatAppGUI(String hi){
 
-    public ChatAppGUI() {
+    }
+
+    public  void setControl(Controll con){
+        controll = con;
+    }
+
+    public ChatAppGUI() throws SQLException {
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        c = new ServerConnection();
+        c.setServerAddress("jdbc:mysql://files.litvinov.in.ua/chatapp_server?characterEncoding=utf-8&useUnicode=true");
+        c.connect();
+        scrollBar1 = scrollPane.createVerticalScrollBar();
         panel.setBackground(Color.GREEN);
         frame.setContentPane(panel);
         frame.setSize(800, 550);
         frame.setLocationRelativeTo(null);
         frame.setResizable(false);
         frame.setVisible(true);
+//        contacts = controll.getLocalContacts();
 
-        /*int port = 28411;
-        callListenerThread = new CallListenerThread(28411);
-        callListenerThread.addObserver(guiForm);
-        callListenerThread.CallListenerStart("lama®");
-        */
+        cancelButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                controll.cancel();
+                // Controll.arrayList.clear();
+                DialogArea.setText(getTextFromArray(Controll.arrayList));
+            }
+        });
+        myFriendsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                contacts = controll.getLocalContacts();
+                if (contacts.getSize() == 0) {
+                    // arrayList.add();
+                    DialogArea.setText("Список контактов пустой");
+                } else {
+                    DialogArea.setText(getTextFromArray(controll.getArrayListFriends()));
+                }
+            }
+        });
+
+        deleteButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                controll.delete();
+            }
+        });
 
         applyButton.addActionListener(new ActionListener() {   /*Этот обработчик событый готов к использовиниюА*/
             @Override
             public void actionPerformed(ActionEvent e) {
-                String nick = myNickNameField.getText();
-                if (ChackGaps(nick)) {
-                    arrayList.add("Вы ввели неправильный ник! ");
-                    arrayList.add("Введите ник не используя пробелы!");
-                } else {
-                    isHaveNickName = true;
-                    nickName = nick;
-                    arrayList.add("Новый ник успешно установлен");
+                controll.apply();
+                System.out.println(getTextFromArray(Controll.arrayList));
+                DialogArea.setText(getTextFromArray(Controll.arrayList));
+               /* if (!isHaveNickName) {
+                    String nick = myNickNameField.getText();
+                    if (ChackGaps(nick)) {
+                        arrayList.add("Вы ввели неправильный ник! ");
+                        arrayList.add("Введите ник не используя пробелы!");
+                    } else {
+                        isHaveNickName = true;
+                        nickName = nick;
+                        arrayList.add("Вы зарегистрированы");
+                        c.setLocalNick(nickName);
+                    }
+                }else{
+                     String tmp = myNickNameField.getText();
+                    if (tmp.equals("")==false&&tmp.equals(nickName)==false){
+                        nickName = myNickNameField.getText();
+                        c.setLocalNick(nickName);
+                        arrayList.add("Вы зарегистрированы");
+                       // arrayList.add("ваши данные успешно изменены");
+                    }
                 }
+                arrayList.add("Вход в программу успешно выполнен");
+                c.goOnline();
                 DialogArea.setText(getTextFromArray(arrayList));
+                /*list1.addListSelectionListener(new ListSelectionListener() {
+                    @Override
+                    public void valueChanged(ListSelectionEvent e) {
+
+                    }
+                });*/
+            }
+        });
+
+
+        contactsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String[] arrayOfContacts = controll.getServerContacts();
+                for (int i = 0; i < arrayOfContacts.length; i++) {
+                    serverContacts.add(arrayOfContacts[i]);
+                }
+                DialogArea.setText(getTextFromArray(serverContacts));
             }
         });
 
         disconnectButton.addActionListener(new ActionListener() {//ok
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (isHaveSocket) {
-                    isHaveSocket = false;
+                /*if (isHaveSocket) {
+                     isHaveSocket = false;
                     arrayList.add("Отключено");
                     try {
                         disconnect();
+                        c.goOffline();
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     }
                 } else {
                     arrayList.add("У Вас нет активного подключения");
-                }
+                }*/
+                controll.disconnect();
                 DialogArea.setText(getTextFromArray(arrayList));
+                //DialogArea.setText(getTextFromArray(arrayList));
             }
         });
 
         connectButton.addActionListener(new ActionListener() {//ок
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (!isHaveSocket) {
+                controll.connect();
+                DialogArea.setText(getTextFromArray(Controll.arrayList));
+
+            }
+        });
+               /* if (!isHaveSocket) {
                     String IPstr;
                     String friendNickTmp;
-                    IPstr = friendIPField.getText();
                     friendNickTmp = friendNickField.getText();
-                    if (isHaveNickName) {
-                        if (!IPstr.equals("") && !friendNickTmp.equals("")){
-                            if (!ChackGaps(friendNickTmp)) {
-                                caller.setRemoteAdress(IPstr);
-                                try {
-                                    caller.Call();
-                                    Socket s = caller.getSocket();
-                                    connection.setSocket(s);
-                                    isHaveSocket = true;
-                                    commandListenerThread = new CommandListenerThread("lalathread", connection);
-                                    commandListenerThread.addObserver(guiForm);
-                                    commandListenerThread.CommandListenerThreadStart();
-                                    arrayList.add(String.valueOf(s.getLocalPort()));
-                                    arrayList.add(String.valueOf(s.getInetAddress()));
-                                    isCalling = true;
-                                } catch (IOException e1) {
-                                    ipErrors.addErrorIP(IPstr);
-                                    arrayList.add("Вызов по данному адресу не удался");
-                                }
-                                /// call window
-                            } else {
+                    //IPstr = searchClient(friendNickTmp);
+                    IPstr=c.getIpForNick(friendNickTmp);
+                    //IPstr = friendIPField.getText(
+                    //if (isHaveNickName) {
+                    if(c.isNickOnline(nickName)&&c.isNickOnline(friendNickTmp)){
+                        if (!IPstr.equals("") && !friendNickTmp.equals("")) {
+                            //  if (!ChackGaps(friendNickTmp)) {
+                            caller.setRemoteAdress(IPstr);
+                            try {
+                                caller.Call();
+                                Socket s = caller.getSocket();
+                                connection.setSocket(s);
+                                isHaveSocket = true;
+                                IP = IPstr;
+                                commandListenerThread = new CommandListenerThread("lalathread", connection);
+                                commandListenerThread.addObserver(guiForm);
+                                commandListenerThread.CommandListenerThreadStart();
+                                arrayList.add(String.valueOf(s.getLocalPort()));
+                                arrayList.add(String.valueOf(s.getInetAddress()));
+                                isCalling = true;
+                            } catch (IOException e1) {
+                                ipErrors.addErrorIP(IPstr);
+                                arrayList.add("Вызов по данному адресу не удался");
+                            }
+                            /// call window
+                           /* } else {
                                 arrayList.add("Вы ввели неправильный ник друга! ");
                                 arrayList.add("Введите ник не используя пробелы!");
                             }
                         } else {
                             arrayList.add("Вы не заполнили все поля!!!");
                         }
-                    } else arrayList.add("Вы не заполнили свой НИК!!!");
+                    } else arrayList.add("Вы не зарегистрированы!!!");
                 } else arrayList.add("У вас есть активное подключение!!!");
-                DialogArea.setText(getTextFromArray(arrayList));
-            }
-        });
-
+                scrollPane.setToolTipText(getTextFromArray(arrayList));
+                // DialogArea.setText(getTextFromArray(arrayList));
+            }*/
         sendButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(isHaveSocket) {
+               /* if (isHaveSocket) {
                     String str = messageField.getText();
-                    if(!str.equals("")) {
+                    if (!str.equals("")) {
                         arrayList.add(str);
                         messageField.setText("");
                         connection.sendMessage(MessageCommand.message);
                         connection.sendMessage(str);
-                    }else{
+                    } else {
                         arrayList.add("Вы не ввели сообщение!");
                     }
-                }else{
+                } else {
                     arrayList.add("нет доступного подклчения");
-                }
+                }*/
+                controll.send();
                 DialogArea.setText(getTextFromArray(arrayList));
+                // DialogArea.setText(getTextFromArray(arrayList));
             }
         });
 
-        myNickNameField.addActionListener(new ActionListener() {
+
+        addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                nickName = myNickNameField.getText();
+                ArrayList<String> arrayListTmp = controll.search();
+                if (!arrayListTmp.get(0).equals("") && !arrayListTmp.get(1).equals("")) {
+                    controll.addToContacts(arrayListTmp.get(0), arrayListTmp.get(1));
+                    DialogArea.setText(arrayListTmp.get(0) + " " + arrayListTmp.get(1));
+                } else {
+                    DialogArea.setText(getTextFromArray(arrayList));
+                }
+
+               /* if (friendNickField.getText().equals("") == false) {
+                    IP = searchClient(friendNickField.getText());
+                    friendNickName = friendNickField.getText();
+                    if ("".equals(IP) == false) {
+                        scrollPane.setToolTipText(friendNickField.getText() + " " + IP);
+                    }
+                }
+            }*/
             }
         });
 
-        friendIPField.addActionListener(new ActionListener() {
+
+
+      /*  myNickNameField.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+              //  nickName = myNickNameField.getText();
+            }
+        });
+
+        /*friendIPField.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 caller.setRemoteAdress(friendIPField.getText());
             }
         });
-
-        friendNickField.addActionListener(new ActionListener() {
+*/
+      /*  friendNickField.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                caller.setRemoteNick(friendNickField.getText());
+                // caller.setRemoteNick(friendNickField.getText());
             }
         });
-
-        messageField.addActionListener(new ActionListener() {
+    }
+       /* messageField.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 arrayList.add(messageField.getText());
             }
+        });}
+*/
+        contactsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new ListContact();
+            }
         });
-
+        //  }
 
     }
-
-
-
+  public void myNickFieldClear(){
+      myNickNameField.setText("");
+  }
     private String getTextFromArray(ArrayList<String> arrayList) {
         String str = "";
-        if(arrayList.size()<26) {
-            for (int i = 0; i < arrayList.size(); i++) {
-                str += arrayList.get(i) + "\n";
-            }
+        // if(arrayList.size()<26) {
+        for (int i = 0; i < arrayList.size(); i++) {
+            str += arrayList.get(i) + "\n";
+        }
+        return str;
+    }
+        /*    }
         }else{
             int index=arrayList.size()-tmpSize;
             for (int i = index; i < arrayList.size(); i++) {
@@ -204,9 +342,19 @@ public class ChatAppGUI implements Observer {
             }
         }
         return str;
-    }
+    }*/
 
-    private boolean ChackGaps(String test) {
+    public String searchClient(String textFromSearch){
+        int size = contacts.getSize();
+        for(int i =0;i<size;i++){
+            if(contacts.getNick(i)==textFromSearch){
+                IP = contacts.getIP(i);
+                return IP;
+            }
+        }
+        return null;
+    }
+    public boolean ChackGaps(String test) {
         for (int j = 0; j < test.length(); j++) {
             if ((test.charAt(j)) == ' ') {
                 return true;
@@ -215,14 +363,30 @@ public class ChatAppGUI implements Observer {
         return false;
     }
 
-    public void disconnect() throws IOException {
+    public String getTextFromField(String str){
+        if (str.equals("friendNickField")){
+            return friendNickField.getText();
+        }else if(str.equals("myNickNameField")){
+            return myNickNameField.getText();
+        }else if(str.equals("messageField")){
+          return messageField.getText();
+        }
+   return null ;
+    }
+
+    public void setTextToMessageField(){
+        messageField.setText("");
+    }
+
+   /* public void disconnect() throws IOException {
         socket=commandListenerThread.getSocket();
         commandListenerThread.deleteObserver(guiForm);
         socket.close();
         commandListenerThread.stop();
+        isHaveSocket = false;
        // socket.close();
     }
-
+*/
     @Override
     public void update(Observable o, Object arg) {
         String str = (String) arg;
@@ -230,14 +394,15 @@ public class ChatAppGUI implements Observer {
         // it is new connection
         if (str.equals(CallListenerThread.itIsCallLisnenerThread)) {
             if (isHaveSocket) {
-                Connection connection1 = new Connection();
+               // Connection connection1 = new Connection();
+                connection = new Connection();
                 try {
-                    connection1.setSocket(callListenerThread.getSocket());
-                    connection1.sendNickBusy(nickName);
+                    connection.setSocket(callListenerThread.getSocket());
+                    connection.sendNickBusy(nickName);
                 } catch (IOException e) {
                 }
             } else {
-              /*  new InputConnection();
+                new InputConnection();
                 try {
                     InputConnection inputConnection = new InputConnection();
                     if (inputConnection.flag) {
@@ -245,7 +410,7 @@ public class ChatAppGUI implements Observer {
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
-                }*/
+                }
             }
         }
 
@@ -262,7 +427,7 @@ public class ChatAppGUI implements Observer {
                     callWindow.stopThisWindow();
                     arrayList.add("Клиент отказался подключаться");
                     try {
-                        disconnect();
+                        controll.disconnectClose();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -273,7 +438,7 @@ public class ChatAppGUI implements Observer {
         }
 
         //it is call user 1 stage
-      /*  if (isCalling) {
+        if (isCalling) {
             if (str.equals(CommandListenerThread.itIsCommandLisnenerThread)) {
                Command command1 = commandListenerThread.getLastCommand();
                 if (  command1.getCommand() == null) System.out.println("lalal");
@@ -281,10 +446,11 @@ public class ChatAppGUI implements Observer {
                     NickCommand nickCommand = (NickCommand)command1;
                     if(nickCommand.isBusy()){
                         friendNickName = nickCommand.getNick();
+                        friendNickField.setText(friendNickName);
                         arrayList.add("Абонент "+friendNickName+" занят");
                         isHaveSocket = false;
                         try {
-                            disconnect();
+                            controll.disconnectClose();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -310,13 +476,13 @@ public class ChatAppGUI implements Observer {
                 isHaveSocket = false;
                arrayList.add("Не удалось позвонить");
                 try {
-                    disconnect();
+                    controll.disconnectClose();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
             isCalling = false;
-        }*/
+        }
 
         if (str.equals(CommandListenerThread.itIsCommandLisnenerThread) && isHaveSocket) {
             Command command1 = commandListenerThread.getLastCommand();
@@ -325,14 +491,14 @@ public class ChatAppGUI implements Observer {
                 if(command1.getCommand().equals(Command.disconnect)){
                     arrayList.add("Вы были отключены другим юзером");
                     try {
-                        disconnect();
+                        controll.disconnectClose();
                     } catch (IOException e) {
                        // e.printStackTrace();
                     }
                 }
                 if (command1.getCommand().equals(MessageCommand.message)) {
 //                    MessageCommand mesCommand = (MessageCommand) command1;
-                    BufferedReader buffReaderIn = null;
+                    /*BufferedReader buffReaderIn = null;
                     socket = commandListenerThread.getSocket();
                     try {
                         buffReaderIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -345,11 +511,16 @@ public class ChatAppGUI implements Observer {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                }
+                }*/
+                    String messageString = connection.readMessage();
+                    arrayList.add(messageString);
+                   // scrollPane.setToolTipText(getTextFromArray(arrayList));
+                    DialogArea.setText(getTextFromArray(arrayList));
             }
         }
-        DialogArea.setText(getTextFromArray(arrayList));
+
     }
+  }
 }
 /* caller.setRemoteAdress(friendIPField.getText());
                         caller.Call();
